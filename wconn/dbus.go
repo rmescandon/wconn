@@ -6,7 +6,7 @@ import (
 	"github.com/godbus/dbus"
 )
 
-const wifiType = 2
+const wifiType uint32 = 2
 
 // AccessPoint holds ssid and dbus path for a network Ap
 type AccessPoint struct {
@@ -95,6 +95,7 @@ func AccessPoints() ([]string, error) {
 		if deviceType.Value() == nil {
 			break
 		}
+
 		if deviceType.Value() != wifiType {
 			continue
 		}

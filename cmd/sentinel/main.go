@@ -5,6 +5,8 @@ import (
 
 	"log"
 
+	"fmt"
+
 	"github.com/rmescandon/wconn/wconn"
 )
 
@@ -90,16 +92,34 @@ func main() {
 		case b := <-cWifi:
 			if b {
 				// connected to external wifi
+
+				//TODO TRACE
+				fmt.Println("Connected to external wifi")
+
 			} else {
 				// disconnected to external wifi
+
+				//TODO TRACE
+				fmt.Println("Disconnected to external wifi")
 			}
 		case b := <-cAp:
 			if b {
 				// AP up
+
+				//TODO TRACE
+				fmt.Println("Local Access Point UP")
+
 			} else {
 				// AP down
+
+				//TODO TRACE
+				fmt.Println("Local Access Point DOWN")
 			}
 		case ssid := <-cSSIDs:
+
+			//TODO TRACE
+			fmt.Printf("SSID: %v\n", ssid)
+
 			// TODO. Temporary set key and value to ssid. In future maybe it is needed
 			// to associate ssid to device entry in dbus
 			accessPoints[ssid] = ssid

@@ -16,7 +16,7 @@ const (
 	configurationURI = "/configuration"
 )
 
-var socketPath = os.Getenv("SNAP_COMMON") + "/sockets/control"
+var socketPath = os.Getenv("SNAP_DATA") + "/sockets/control"
 
 type serviceResponse struct {
 	Result     map[string]interface{} `json:"result"`
@@ -72,8 +72,5 @@ func AccessPointIsUp() bool {
 		return false
 	}
 
-	if response.Result["disabled"].(bool) {
-		return false
-	}
-	return true
+	return response.Result["disabled"].(bool)
 }
