@@ -1,0 +1,42 @@
+name: wconn
+version: 0.1-1
+summary: Connect your device to external wifi over temp wifi AP
+description: |
+  A solution to enable your device to connect to an external wifi 
+  Please find the source of this snap at:
+  https://github.com/rmescandon/wconn
+grade: devel
+confinement: devmode
+
+apps:
+  wconn: 
+    command: cmd 
+  sentinel:
+    command: sentinel 
+    daemon: simple
+
+plugs:
+  control:
+    interface: content
+    content: socket-directory
+    target: $SNAP_COMMON/sockets
+    default-provider: wifi-ap
+
+parts:
+  logic:
+    plugin: go
+    source: . 
+    go-importpath: github.com/rmescandon/wconn
+    # build-packages:
+    #   # needed by go get
+    #   - bzr
+    # install: |
+    #   export GOPATH=$PWD/../go
+    #   cd $GOPATH/src/github.com/wconn
+    #   ./run-checks all
+  assets:
+    plugin: dump
+    source: .
+    stage:
+      - static
+
