@@ -14,6 +14,7 @@ apps:
   sentinel:
     command: sentinel 
     daemon: simple
+    plugs: [control]
 
 plugs:
   control:

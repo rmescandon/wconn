@@ -12,17 +12,7 @@
 <body>
     <div class="wrapper">
         <div id="main-content" class="inner-wrapper">
-	   <div class="row no-border" id="login">
-		 <ul class="no-bullets">
-			 <li><p>Password:</p></li>
-			 <li><input type="password" id="passphrasePage"/></li>
-			 <li>
-				<input type="checkbox" id="showpassphrasePage" onchange="show_passphrase('Page')"/>
-				<label for="showpassphrasePage">show passphrase</label>
-			</li>
-			<li><input type="button" value="Continue" onclick="authenticate()"/></li>
-		</ul>
-	   </div>
+	   
 
            <div class="row no-border" id="grid">
 
@@ -71,7 +61,7 @@
                 </table>
                 </div>
                 </fieldset>
-                </div class="twelve-col">
+                <div class="twelve-col">
                 <input type="button" value="Refresh SSIDs" class="button--primary" onclick="do_refresh_ssids()"/>
                 </div>
             </div>
@@ -83,38 +73,6 @@
         <input type="hidden" name="ssid"/>
         <input type="hidden" name="pwd"/>
     </form>
-
-<script>
-        $(document).ready(function(){
-                $('#grid').css('display', 'none')      
-	})
-	function showSsids() {
-	    $('#login').css('display', 'none');      
-	    $('#grid').css('display', 'block');     
-	}
-	function authenticate(){
-            var pw = $('#passphrasePage').val();
-	    if ( pw.length < 8) {
-		alert("Password must be at least 8 characters long");
-	    } else {
-	        $.ajax({
-	          type: "POST",
-	          url: "/hashit",
-	          data: {Hash: pw}
-	        }).done(function (hashRet) {
-		    console.log("in ajax done.", hashRet);
-		    hash = JSON.parse(hashRet);
-		    console.log(hash)
-		    if (hash.HashMatch) {
-			showSsids();
-		    } else {
-			alert("Your password does not match, please try again");
-		    }
-	        })
-            }
-	}    
-</script>
-
 
 <script>
 function clear_row(i) {

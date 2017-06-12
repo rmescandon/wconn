@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/rmescandon/wconn/wconn"
+	"github.com/rmescandon/wconn/web"
 )
 
 const idle = 5 * time.Second
@@ -92,28 +93,47 @@ func main() {
 		case b := <-cWifi:
 			if b {
 				// connected to external wifi
+				// TODO: Start operational
 
 				//TODO TRACE
-				fmt.Println("Connected to external wifi")
+				fmt.Println("WCONN - Connected to external wifi")
+
+				if err := web.ListenAndServe(web.OperationalHandler()); err != nil {
+					fmt.Printf("Error starting operational server: %v\n", err)
+				}
 
 			} else {
 				// disconnected to external wifi
 
 				//TODO TRACE
-				fmt.Println("Disconnected to external wifi")
+				fmt.Println("WCONN - Disconnected from external wifi")
+
+				//TODO IT IS NEEDED CONTROL EVERY SERVER SERPARATEDLY
+				// if err := web.Stop(); err != nil {
+				// 	log.Printf("Error shutting down server: %v\n", err)
+				// }
 			}
 		case b := <-cAp:
 			if b {
 				// AP up
 
 				//TODO TRACE
-				fmt.Println("Local Access Point UP")
+				fmt.Println("WCONN - Local Access Point UP")
+
+				if err := web.ListenAndServe(web.ManagementHandler(accessPoints)); err != nil {
+					fmt.Printf("Error starting management server: %v\n", err)
+				}
 
 			} else {
 				// AP down
 
 				//TODO TRACE
-				fmt.Println("Local Access Point DOWN")
+				fmt.Println("WCONN - Local Access Point DOWN")
+
+				//TODO IT IS NEEDED CONTROL EVERY SERVER SERPARATEDLY
+				// if err := web.Stop(); err != nil {
+				// 	log.Printf("Error shutting down server: %v\n", err)
+				// }
 			}
 		case ssid := <-cSSIDs:
 

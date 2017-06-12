@@ -72,5 +72,5 @@ func AccessPointIsUp() bool {
 		return false
 	}
 
-	return response.Result["disabled"].(bool)
+	return !response.Result["disabled"].(bool)
 }
