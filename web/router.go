@@ -23,8 +23,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// ManagementHandler handles requests for web UI when AP is up
-func ManagementHandler(ssidsMap map[string]string) *mux.Router {
+// managementHandler handles requests for web UI when AP is up
+func managementRouter(ssidsMap map[string]string) *mux.Router {
 	router := mux.NewRouter()
 
 	ssids := make([]string, 0, len(ssidsMap))
@@ -32,8 +32,13 @@ func ManagementHandler(ssidsMap map[string]string) *mux.Router {
 		ssids = append(ssids, k)
 	}
 
+	// only start in AP interface: 10.0.60.1
+	address = "10.0.60.1:8080"
+
 	// Pages routes
-	router.HandleFunc("/", managementHandler).Methods("GET")
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		managementHandler(w, r, ssids)
+	})
 	// router.HandleFunc("/connect", ConnectHandler).Methods("POST")
 	// router.HandleFunc("/hashit", HashItHandler).Methods("POST")
 	// router.HandleFunc("/refresh", RefreshHandler).Methods("GET")
@@ -45,9 +50,11 @@ func ManagementHandler(ssidsMap map[string]string) *mux.Router {
 	return router
 }
 
-// OperationalHandler handles request for web UI when connected to external WIFI
-func OperationalHandler() *mux.Router {
+// operationalHandler handles request for web UI when connected to external WIFI
+func operationalRouter() *mux.Router {
 	router := mux.NewRouter()
+
+	address = ":8080"
 
 	router.HandleFunc("/", operationalHandler).Methods("GET")
 	// router.HandleFunc("/disconnect", DisconnectHandler).Methods("GET")

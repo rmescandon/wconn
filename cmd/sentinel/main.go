@@ -1,11 +1,9 @@
 package main
 
 import (
-	"time"
-
-	"log"
-
 	"fmt"
+	"log"
+	"time"
 
 	"github.com/rmescandon/wconn/wconn"
 	"github.com/rmescandon/wconn/web"
@@ -98,7 +96,7 @@ func main() {
 				//TODO TRACE
 				fmt.Println("WCONN - Connected to external wifi")
 
-				if err := web.ListenAndServe(web.OperationalHandler()); err != nil {
+				if err := web.StartOperationalPortal(); err != nil {
 					fmt.Printf("Error starting operational server: %v\n", err)
 				}
 
@@ -108,10 +106,9 @@ func main() {
 				//TODO TRACE
 				fmt.Println("WCONN - Disconnected from external wifi")
 
-				//TODO IT IS NEEDED CONTROL EVERY SERVER SERPARATEDLY
-				// if err := web.Stop(); err != nil {
-				// 	log.Printf("Error shutting down server: %v\n", err)
-				// }
+				if err := web.StopOperationalPortal(); err != nil {
+					log.Printf("Error shutting down operational portal: %v\n", err)
+				}
 			}
 		case b := <-cAp:
 			if b {
@@ -120,7 +117,7 @@ func main() {
 				//TODO TRACE
 				fmt.Println("WCONN - Local Access Point UP")
 
-				if err := web.ListenAndServe(web.ManagementHandler(accessPoints)); err != nil {
+				if err := web.StartManagementPortal(accessPoints); err != nil {
 					fmt.Printf("Error starting management server: %v\n", err)
 				}
 
@@ -130,10 +127,9 @@ func main() {
 				//TODO TRACE
 				fmt.Println("WCONN - Local Access Point DOWN")
 
-				//TODO IT IS NEEDED CONTROL EVERY SERVER SERPARATEDLY
-				// if err := web.Stop(); err != nil {
-				// 	log.Printf("Error shutting down server: %v\n", err)
-				// }
+				if err := web.StopManagementPortal(); err != nil {
+					log.Printf("Error shutting down management portal: %v\n", err)
+				}
 			}
 		case ssid := <-cSSIDs:
 

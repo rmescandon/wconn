@@ -33,8 +33,6 @@ const (
 
 var resourcesPath = filepath.Join(os.Getenv("SNAP"), "static")
 
-var ssids []string
-
 // Data interface representing any data included in a template
 type Data interface{}
 
@@ -68,7 +66,7 @@ func execTemplate(w http.ResponseWriter, templatePath string, data Data) {
 	}
 }
 
-func managementHandler(w http.ResponseWriter, r *http.Request) {
+func managementHandler(w http.ResponseWriter, r *http.Request, ssids []string) {
 	data := SsidsData{Ssids: ssids}
 	execTemplate(w, managementTemplatePath, data)
 }

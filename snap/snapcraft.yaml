@@ -10,7 +10,7 @@ confinement: devmode
 
 apps:
   wconn: 
-    command: cmd 
+    command: cli 
   sentinel:
     command: sentinel 
     daemon: simple
@@ -20,7 +20,7 @@ plugs:
   control:
     interface: content
     content: socket-directory
-    target: $SNAP_DATA/sockets
+    target: $SNAP_COMMON/sockets
     default-provider: wifi-ap
 
 parts:

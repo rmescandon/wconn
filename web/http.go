@@ -47,12 +47,12 @@ func (ln tcpKeepAliveListener) Accept() (net.Conn, error) {
 	return tc, nil
 }
 
-// ListenAndServe starts http server in port 8080. Stops any previous one if needed
-func ListenAndServe(handler http.Handler) error {
+// listenAndServe starts http server in port 8080. Stops any previous one if needed
+func listenAndServe(handler http.Handler) error {
 
-	if runningOn(address) {
+	if running() {
 		// stop previous instance before starting new one
-		err := Stop()
+		err := stop()
 		if err != nil {
 			return fmt.Errorf("Could not stop the current running instance before starting a new one %v", err)
 		}
@@ -73,7 +73,7 @@ func ListenAndServe(handler http.Handler) error {
 	go func() {
 		retries := 10
 		idle := 10 * time.Millisecond
-		for ; !runningOn(address) && retries > 0; retries-- {
+		for ; !running() && retries > 0; retries-- {
 			time.Sleep(idle)
 			idle *= 2
 		}
@@ -101,10 +101,10 @@ func ListenAndServe(handler http.Handler) error {
 	return nil
 }
 
-// Stop stops current http server
-func Stop() error {
+// stop stops current http server
+func stop() error {
 
-	if !runningOn(address) {
+	if !running() {
 		return fmt.Errorf("Already stopped")
 	}
 
@@ -123,7 +123,7 @@ func Stop() error {
 	return nil
 }
 
-func runningOn(address string) bool {
+func running() bool {
 
 	if strings.HasPrefix(address, ":") {
 		address = "localhost" + address
