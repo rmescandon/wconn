@@ -90,10 +90,6 @@ func main() {
 		select {
 		case b := <-cWifi:
 			if b {
-				// connected to external wifi
-				// TODO: Start operational
-
-				//TODO TRACE
 				fmt.Println("WCONN - Connected to external wifi")
 
 				if err := web.StartOperationalPortal(); err != nil {
@@ -101,9 +97,6 @@ func main() {
 				}
 
 			} else {
-				// disconnected to external wifi
-
-				//TODO TRACE
 				fmt.Println("WCONN - Disconnected from external wifi")
 
 				if err := web.StopOperationalPortal(); err != nil {
@@ -112,9 +105,6 @@ func main() {
 			}
 		case b := <-cAp:
 			if b {
-				// AP up
-
-				//TODO TRACE
 				fmt.Println("WCONN - Local Access Point UP")
 
 				if err := web.StartManagementPortal(accessPoints); err != nil {
@@ -122,9 +112,6 @@ func main() {
 				}
 
 			} else {
-				// AP down
-
-				//TODO TRACE
 				fmt.Println("WCONN - Local Access Point DOWN")
 
 				if err := web.StopManagementPortal(); err != nil {
@@ -132,10 +119,6 @@ func main() {
 				}
 			}
 		case ssid := <-cSSIDs:
-
-			//TODO TRACE
-			fmt.Printf("SSID: %v\n", ssid)
-
 			// TODO. Temporary set key and value to ssid. In future maybe it is needed
 			// to associate ssid to device entry in dbus
 			accessPoints[ssid] = ssid

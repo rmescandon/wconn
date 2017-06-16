@@ -61,7 +61,7 @@ func ConnectedToWifi() bool {
 	return false
 }
 
-// AccessPoints returns available accesss points to connect to
+// AccessPoints returns available access points to connect to
 func AccessPoints() ([]string, error) {
 
 	var ssids []string

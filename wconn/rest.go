@@ -16,7 +16,7 @@ const (
 	configurationURI = "/configuration"
 )
 
-var socketPath = os.Getenv("SNAP_COMMON") + "/sockets/control"
+var socketPath = os.Getenv("SNAP_COMMON") + "/control"
 
 type serviceResponse struct {
 	Result     map[string]interface{} `json:"result"`

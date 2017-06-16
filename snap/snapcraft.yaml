@@ -20,7 +20,7 @@ plugs:
   control:
     interface: content
     content: socket-directory
-    target: $SNAP_COMMON/sockets
+    target: $SNAP_COMMON
     default-provider: wifi-ap
 
 parts:
@@ -28,13 +28,14 @@ parts:
     plugin: go
     source: . 
     go-importpath: github.com/rmescandon/wconn
-    # build-packages:
-    #   # needed by go get
-    #   - bzr
-    # install: |
-    #   export GOPATH=$PWD/../go
-    #   cd $GOPATH/src/github.com/wconn
-    #   ./run-checks all
+    build-packages:
+      # needed by go get
+      - bzr
+    install: |
+      [ -z "$SKIP_TESTS" ] || exit 0
+      export GOPATH=$PWD/../go
+      cd $GOPATH/src/github.com/rmescandon/wconn
+      ./run-checks all
   assets:
     plugin: dump
     source: .
