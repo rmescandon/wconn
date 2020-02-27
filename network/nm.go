@@ -5,6 +5,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Nm network manager
+type Nm interface {
+	Ssids() ([]string, error)
+	Connected() (bool, error)
+}
+
 type dbusBase struct {
 	c *dbus.Conn
 	o dbus.BusObject
@@ -12,6 +18,60 @@ type dbusBase struct {
 
 type nm struct {
 	dbusBase
+}
+
+// NewNm returns a new Network Manager object
+func NewNm() (Nm, error) {
+	return newNm()
+}
+
+// Ssids returns a string list of the available WiFi ssids to connect to
+func (m *nm) Ssids() ([]string, error) {
+	var ssids []string
+
+	devs, err := m.wifiDevices()
+	if err != nil {
+		return ssids, err
+	}
+
+	if len(devs) == 0 {
+		return ssids, nil
+	}
+
+	// take the first wifi device (any is valid) and get the access points
+	aps, err := devs[0].accessPoints()
+	if err != nil {
+		return ssids, err
+	}
+
+	for _, ap := range aps {
+		ssid, err := ap.ssid()
+		if err != nil {
+			return ssids, err
+		}
+		ssids = append(ssids, ssid)
+	}
+
+	return ssids, nil
+}
+
+// Connected returns true if any WiFi device is connected to a network
+func (m *nm) Connected() (bool, error) {
+	devs, err := m.wifiDevices()
+	if err != nil {
+		return false, err
+	}
+	for _, d := range devs {
+		isConnected, err := d.isConnected()
+		if err != nil {
+			return false, err
+		}
+
+		if isConnected {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func newNm() (*nm, error) {
@@ -66,22 +126,4 @@ func (m *nm) wifiDevices() ([]*dev, error) {
 	}
 
 	return wifiDevs, nil
-}
-
-func (m *nm) connected() (bool, error) {
-	devs, err := m.wifiDevices()
-	if err != nil {
-		return false, err
-	}
-	for _, d := range devs {
-		isConnected, err := d.isConnected()
-		if err != nil {
-			return false, err
-		}
-
-		if isConnected {
-			return true, nil
-		}
-	}
-	return false, nil
 }
