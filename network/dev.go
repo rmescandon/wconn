@@ -1,7 +1,5 @@
 package network
 
-import "github.com/godbus/dbus"
-
 // wifiType is the flag determinating a device on dbus
 const wifiType uint32 = 2
 
@@ -14,10 +12,7 @@ type dev struct {
 
 func (d *dev) newAp(path string) *ap {
 	return &ap{
-		dbusBase{
-			c: d.c,
-			o: d.c.Object("org.freedesktop.NetworkManager", dbus.ObjectPath(path)),
-		},
+		newDbusBase(d.c, path),
 	}
 }
 

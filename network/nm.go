@@ -11,11 +11,6 @@ type Nm interface {
 	Connected() (bool, error)
 }
 
-type dbusBase struct {
-	c *dbus.Conn
-	o dbus.BusObject
-}
-
 type nm struct {
 	dbusBase
 }
@@ -80,17 +75,13 @@ func newNm() (*nm, error) {
 		return nil, errors.Errorf("Error getting system dbus reference: %v", err)
 	}
 
-	o := c.Object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager")
-
-	return &nm{dbusBase{c: c, o: o}}, nil
+	db := newDbusBase(c, "/org/freedesktop/NetworkManager")
+	return &nm{db}, nil
 }
 
 func (m *nm) newDev(path string) *dev {
 	return &dev{
-		dbusBase{
-			c: m.c,
-			o: m.c.Object("org.freedesktop.NetworkManager", dbus.ObjectPath(path)),
-		},
+		newDbusBase(m.c, path),
 	}
 }
 
