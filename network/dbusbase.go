@@ -9,7 +9,7 @@ type dbusBase struct {
 	o dbus.BusObject
 }
 
-func newDbusBase(c *dbus.Conn, path string) dbusBase {
+var newDbusBase = func(c *dbus.Conn, path string) dbusBase {
 	return dbusBase{
 		c: c,
 		o: c.Object("org.freedesktop.NetworkManager", dbus.ObjectPath(path)),
