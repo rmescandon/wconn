@@ -37,26 +37,49 @@ func (s *NetworkSuite) TearDownTest(c *check.C) {
 }
 
 func (s *NetworkSuite) TestGetAvailableSsids(c *check.C) {
-	// Define the dbusObject expectations
+
+	devs := []string{
+		"WifiDevice1",
+		"WifiDevice2",
+		"OtherDevice3",
+	}
+
+	aps := []string{
+		"AccessPoint1",
+		"AccessPoint2",
+	}
+
+	nWifiDevices := 2
+	nNotWifiDevices := 1
+
+	// Get All devices once
 	s.mockBusObject.EXPECT().Call("org.freedesktop.NetworkManager.GetAllDevices", gomock.Any()).Return(
 		&dbus.Call{
-			Body: []interface{}{[]string{"WifiDevice1"}},
+			Body: []interface{}{devs},
 		})
 
+	// Two devices are wifi
 	s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.Device.DeviceType").Return(
 		dbus.MakeVariant(uint32(2)),
 		nil,
-	)
+	).Times(nWifiDevices)
 
+	// One device is not wifi
+	s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.Device.DeviceType").Return(
+		dbus.MakeVariant(uint32(18)),
+		nil,
+	).Times(nNotWifiDevices)
+
+	// There is one access point
 	s.mockBusObject.EXPECT().Call("org.freedesktop.NetworkManager.Device.Wireless.GetAllAccessPoints", gomock.Any()).Return(
 		&dbus.Call{
-			Body: []interface{}{[]string{"AccessPoint1"}},
+			Body: []interface{}{aps},
 		})
 
 	s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.AccessPoint.Ssid").Return(
 		dbus.MakeVariant("MyHomeWifi"),
 		nil,
-	)
+	).Times(nWifiDevices)
 
 	// Execute the test
 	nm, err := network.NewNm()

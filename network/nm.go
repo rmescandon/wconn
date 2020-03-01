@@ -22,6 +22,8 @@ func NewNm() (Nm, error) {
 
 // Ssids returns a string list of the available WiFi ssids to connect to
 func (m *nm) Ssids() ([]string, error) {
+	// Idiomatic way of creating a set for not duplicating SSIDs
+	ssidsSet := make(map[string]bool)
 	var ssids []string
 
 	devs, err := m.wifiDevices()
@@ -44,7 +46,12 @@ func (m *nm) Ssids() ([]string, error) {
 		if err != nil {
 			return ssids, err
 		}
-		ssids = append(ssids, ssid)
+
+		ssidsSet[ssid] = true
+	}
+
+	for k := range ssidsSet {
+		ssids = append(ssids, k)
 	}
 
 	return ssids, nil
