@@ -70,7 +70,7 @@ func (s *NetworkSuite) TestGetAvailableSsids(c *check.C) {
 		nil,
 	).Times(nNotWifiDevices)
 
-	// There is one access point
+	// Get the access points
 	s.mockBusObject.EXPECT().Call("org.freedesktop.NetworkManager.Device.Wireless.GetAllAccessPoints", gomock.Any()).Return(
 		&dbus.Call{
 			Body: []interface{}{aps},
@@ -79,7 +79,12 @@ func (s *NetworkSuite) TestGetAvailableSsids(c *check.C) {
 	s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.AccessPoint.Ssid").Return(
 		dbus.MakeVariant("MyHomeWifi"),
 		nil,
-	).Times(nWifiDevices)
+	)
+
+	s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.AccessPoint.Ssid").Return(
+		dbus.MakeVariant("MyNeigbourWifi"),
+		nil,
+	)
 
 	// Execute the test
 	nm, err := network.NewNm()
@@ -87,6 +92,7 @@ func (s *NetworkSuite) TestGetAvailableSsids(c *check.C) {
 
 	ssids, err := nm.Ssids()
 	c.Assert(err, check.IsNil)
-	c.Assert(ssids, check.HasLen, 1)
+	c.Assert(ssids, check.HasLen, 2)
 	c.Assert(ssids[0], check.Equals, "MyHomeWifi")
+	c.Assert(ssids[1], check.Equals, "MyNeigbourWifi")
 }
