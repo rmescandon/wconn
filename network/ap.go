@@ -10,5 +10,5 @@ func (a *ap) ssid() (string, error) {
 		return "", err
 	}
 
-	return string(ssid.Value().([]byte)), nil
+	return ssid.Value().(string), nil
 }
