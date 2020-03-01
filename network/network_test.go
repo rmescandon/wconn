@@ -49,6 +49,11 @@ func (s *NetworkSuite) TestGetAvailableSsids(c *check.C) {
 		"AccessPoint2",
 	}
 
+	reachableSsids := map[string]bool{
+		"MyHomeWifi":     false,
+		"MyNeigbourWifi": false,
+	}
+
 	nWifiDevices := 2
 	nNotWifiDevices := 1
 
@@ -76,23 +81,26 @@ func (s *NetworkSuite) TestGetAvailableSsids(c *check.C) {
 			Body: []interface{}{aps},
 		})
 
-	s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.AccessPoint.Ssid").Return(
-		dbus.MakeVariant("MyHomeWifi"),
-		nil,
-	)
-
-	s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.AccessPoint.Ssid").Return(
-		dbus.MakeVariant("MyNeigbourWifi"),
-		nil,
-	)
+	for ssid, _ := range reachableSsids {
+		s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.AccessPoint.Ssid").Return(
+			dbus.MakeVariant(ssid),
+			nil,
+		)
+	}
 
 	// Execute the test
-	nm, err := network.NewNm()
+	nm, err := network.NewManager()
 	c.Assert(err, check.IsNil)
 
 	ssids, err := nm.Ssids()
 	c.Assert(err, check.IsNil)
 	c.Assert(ssids, check.HasLen, 2)
-	c.Assert(ssids[0], check.Equals, "MyHomeWifi")
-	c.Assert(ssids[1], check.Equals, "MyNeigbourWifi")
+
+	for _, ssid := range ssids {
+		reachableSsids[ssid] = false
+	}
+
+	for _, flag := range reachableSsids {
+		c.Assert(flag, check.Equals, false)
+	}
 }

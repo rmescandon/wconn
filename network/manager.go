@@ -5,23 +5,23 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Nm network manager
-type Nm interface {
+// Manager network manager
+type Manager interface {
 	Ssids() ([]string, error)
 	Connected() (bool, error)
 }
 
-type nm struct {
+type manager struct {
 	dbusBase
 }
 
-// NewNm returns a new Network Manager object
-func NewNm() (Nm, error) {
-	return newNm()
+// NewManager returns a new Network Manager object
+func NewManager() (Manager, error) {
+	return newManager()
 }
 
 // Ssids returns a string list of the available WiFi ssids to connect to
-func (m *nm) Ssids() ([]string, error) {
+func (m *manager) Ssids() ([]string, error) {
 	// Idiomatic way of creating a set for not duplicating SSIDs
 	ssidsSet := make(map[string]bool)
 	var ssids []string
@@ -58,7 +58,7 @@ func (m *nm) Ssids() ([]string, error) {
 }
 
 // Connected returns true if any WiFi device is connected to a network
-func (m *nm) Connected() (bool, error) {
+func (m *manager) Connected() (bool, error) {
 	devs, err := m.wifiDevices()
 	if err != nil {
 		return false, err
@@ -76,23 +76,23 @@ func (m *nm) Connected() (bool, error) {
 	return false, nil
 }
 
-func newNm() (*nm, error) {
+func newManager() (*manager, error) {
 	c, err := dbus.SystemBus()
 	if err != nil {
 		return nil, errors.Errorf("Error getting system dbus reference: %v", err)
 	}
 
 	db := newDbusBase(c, "/org/freedesktop/NetworkManager")
-	return &nm{db}, nil
+	return &manager{db}, nil
 }
 
-func (m *nm) newDev(path string) *dev {
+func (m *manager) newDev(path string) *dev {
 	return &dev{
 		newDbusBase(m.c, path),
 	}
 }
 
-func (m *nm) devices() ([]*dev, error) {
+func (m *manager) devices() ([]*dev, error) {
 	var devPaths []string
 	err := m.o.Call("org.freedesktop.NetworkManager.GetAllDevices", 0).Store(&devPaths)
 
@@ -103,7 +103,7 @@ func (m *nm) devices() ([]*dev, error) {
 	return devs, err
 }
 
-func (m *nm) wifiDevices() ([]*dev, error) {
+func (m *manager) wifiDevices() ([]*dev, error) {
 	devs, err := m.devices()
 	if err != nil {
 		return nil, err
