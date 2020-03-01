@@ -30,3 +30,8 @@ you should install it:
 ```sh
 sudo apt install -y mockgen
 ```
+
+Update the mocks by executing
+```sh
+./genmock.sh
+```

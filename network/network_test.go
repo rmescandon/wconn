@@ -11,6 +11,13 @@ import (
 	"github.com/golang/mock/gomock"
 )
 
+const (
+	// any value other than 2
+	notWifiDeviceType uint32 = 18
+	// any value other than 100
+	notWifiDeviceConnected uint32 = 200
+)
+
 var testCtx *testing.T
 
 func Test(t *testing.T) {
@@ -64,13 +71,13 @@ func (s *NetworkSuite) TestGetAvailableSsids(c *check.C) {
 
 	// Two devices are wifi
 	s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.Device.DeviceType").Return(
-		dbus.MakeVariant(uint32(2)),
+		dbus.MakeVariant(uint32(network.WifiDeviceType)),
 		nil,
 	).Times(nWifiDevices)
 
 	// One device is not wifi
 	s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.Device.DeviceType").Return(
-		dbus.MakeVariant(uint32(18)),
+		dbus.MakeVariant(uint32(notWifiDeviceType)),
 		nil,
 	).Times(nNotWifiDevices)
 
@@ -122,19 +129,19 @@ func (s *NetworkSuite) TestIsConnected(c *check.C) {
 
 	// Two devices are wifi
 	s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.Device.DeviceType").Return(
-		dbus.MakeVariant(uint32(2)),
+		dbus.MakeVariant(uint32(network.WifiDeviceType)),
 		nil,
 	).Times(nWifiDevices)
 
 	// One device is not wifi
 	s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.Device.DeviceType").Return(
-		dbus.MakeVariant(uint32(18)),
+		dbus.MakeVariant(uint32(notWifiDeviceType)),
 		nil,
 	).Times(nNotWifiDevices)
 
 	// Get the Connected state
 	s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.Device.State").Return(
-		dbus.MakeVariant(uint32(100)),
+		dbus.MakeVariant(uint32(network.WifiDeviceConnected)),
 		nil,
 	)
 
@@ -165,19 +172,19 @@ func (s *NetworkSuite) TestIsDisconnected(c *check.C) {
 
 	// Two devices are wifi
 	s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.Device.DeviceType").Return(
-		dbus.MakeVariant(uint32(2)),
+		dbus.MakeVariant(uint32(network.WifiDeviceType)),
 		nil,
 	).Times(nWifiDevices)
 
 	// One device is not wifi
 	s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.Device.DeviceType").Return(
-		dbus.MakeVariant(uint32(18)),
+		dbus.MakeVariant(uint32(notWifiDeviceType)),
 		nil,
 	).Times(nNotWifiDevices)
 
 	// Get the Connected state
 	s.mockBusObject.EXPECT().GetProperty("org.freedesktop.NetworkManager.Device.State").Return(
-		dbus.MakeVariant(uint32(200)),
+		dbus.MakeVariant(uint32(notWifiDeviceConnected)),
 		nil,
 	).Times(nWifiDevices)
 
