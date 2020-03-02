@@ -1,5 +1,7 @@
 package network
 
+import "github.com/pkg/errors"
+
 // WifiDeviceType is the flag determinating a device on dbus
 const WifiDeviceType uint32 = 2
 
@@ -36,6 +38,26 @@ func (d *dev) accessPoints() ([]*ap, error) {
 		aps = append(aps, d.newAp(apPath))
 	}
 	return aps, nil
+}
+
+func (d *dev) accessPoint(ssid string) (*ap, error) {
+	aps, err := d.accessPoints()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ap := range aps {
+		s, err := ap.ssid()
+		if err != nil {
+			return nil, err
+		}
+
+		if s == ssid {
+			return ap, nil
+		}
+	}
+
+	return nil, errors.Errorf("Could not find an access point for %v", ssid)
 }
 
 func (d *dev) is(propertyPath string, comparationFlag uint32) (bool, error) {

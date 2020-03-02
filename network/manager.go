@@ -1,6 +1,8 @@
 package network
 
 import (
+	"fmt"
+
 	"github.com/godbus/dbus"
 	"github.com/pkg/errors"
 )
@@ -125,3 +127,74 @@ func (m *manager) wifiDevices() ([]*dev, error) {
 
 	return wifiDevs, nil
 }
+
+func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) error {
+	// security is "802-11-wireless-security"
+	// keyMgmt is wpa-psk
+	d, err := m.getDeviceFromSsid(ssid)
+	if err != nil {
+		return err
+	}
+
+	a, err := d.accessPoint(ssid)
+	if err != nil {
+		return err
+	}
+
+	connSettings := map[string]dbus.Variant{
+		"802-11-wireless": dbus.MakeVariant(map[string]dbus.Variant{
+			"security": dbus.MakeVariant(security),
+		}),
+		"802-11-wireless-security": dbus.MakeVariant(map[string]dbus.Variant{
+			"key-mgmt": dbus.MakeVariant(keyMgmt),
+			"psk":      dbus.MakeVariant(passphrase),
+		}),
+	}
+
+	// TODO subscribe to signal
+	var retval string
+	err = m.o.Call("org.freedesktop.NetworkManager.AddAndActivateConnection", 0, connSettings, d.o.Path(), a.o.Path()).Store(&retval)
+
+	// TODO TRACE
+	fmt.Printf("RETVAL: %v", retval)
+
+	return err
+}
+
+func (m *manager) Disconnect() error {
+	var retval string
+	err := m.o.Call("org.freedesktop.NetworkManager.Device.Disconnect", 0).Store(&retval)
+
+	// TODO TRACE
+	fmt.Printf("RETVAL: %v", retval)
+
+	return err
+}
+
+func (m *manager) getDeviceFromSsid(ssid string) (*dev, error) {
+	devs, err := m.wifiDevices()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, d := range devs {
+		_, err := d.accessPoint(ssid)
+		if err != nil {
+			continue
+		}
+
+		return d, nil
+	}
+
+	return nil, errors.Errorf("Could not find a device for SSID: %v", ssid)
+
+}
+
+// func (m *manager) getAccessPointFromSsid(ssid string) (*ap, error) {
+// 	d, err := m.getDeviceFromSsid(ssid)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	return d.accessPoint(ssid)
+// }
