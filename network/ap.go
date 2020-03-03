@@ -10,5 +10,11 @@ func (a *ap) ssid() (string, error) {
 		return "", err
 	}
 
-	return ssid.Value().(string), nil
+	switch ssid.Value().(type) {
+	case []byte:
+		return string(ssid.Value().([]byte)), nil
+	default:
+		return ssid.Value().(string), nil
+
+	}
 }
