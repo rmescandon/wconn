@@ -7,6 +7,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const networkManagerInterface = "org.freedesktop.NetworkManager"
+
 // Manager network manager
 type Manager interface {
 	Ssids() ([]string, error)
@@ -120,7 +122,7 @@ func (m *manager) Disconnect() error {
 	}
 
 	for _, d := range devs {
-		if err := d.disconnect(); err != nil {
+		if err = d.disconnect(); err != nil {
 			return err
 		}
 	}

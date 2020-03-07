@@ -1,16 +1,28 @@
 package network
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 )
 
-// WifiDeviceType is the flag determinating a device on dbus
-const WifiDeviceType uint32 = 2
+const (
+	// WifiDeviceType is the flag determinating a device on dbus
+	WifiDeviceType uint32 = 2
 
-// WifiDeviceConnected is the flag determinating if device is connected to a network
-const WifiDeviceConnected uint32 = 100
+	// WifiDeviceConnected is the flag determinating if device is connected to a network
+	WifiDeviceConnected uint32 = 100
+)
+
+const (
+	// Interfaces
+	deviceInterface         = networkManagerInterface + ".Device"
+	deviceWirelessInterface = deviceInterface + ".Wireless"
+
+	// Properties
+	deviceActiveConnection = deviceInterface + ".ActiveConnection"
+
+	// Methods
+	deviceWirelessGetAccessPoints = deviceWirelessInterface + ".GetAccessPoints"
+)
 
 type dev struct {
 	dbusBase
@@ -64,20 +76,12 @@ func (d *dev) accessPoint(ssid string) (*ap, error) {
 	return nil, errors.Errorf("Could not find an access point for %v", ssid)
 }
 
+// func (d *dev) activeConnection() (string, error) {
+// 	return d.propAsStr(deviceActiveConnection)
+// }
+
 func (d *dev) disconnect() error {
-	var retval []string
-
-	c := d.o.Call("org.freedesktop.NetworkManager.Device.Disconnect", 0)
-
-	fmt.Printf("c.Body: %v", c.Body)
-
-	err := c.Store(&retval)
-
-	// TODO TRACE
-	fmt.Printf("RETVAL: %v", retval)
-	fmt.Printf("ERR: %v", err)
-
-	return err
+	return d.o.Call("org.freedesktop.NetworkManager.Device.Disconnect", 0).Err
 }
 
 func (d *dev) is(propertyPath string, comparationFlag uint32) (bool, error) {
