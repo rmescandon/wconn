@@ -1,13 +1,18 @@
 package network
 
 import (
-	"fmt"
-
 	"github.com/godbus/dbus"
 	"github.com/pkg/errors"
 )
 
-const networkManagerInterface = "org.freedesktop.NetworkManager"
+const (
+	// Interfaces
+	networkManagerInterface = "org.freedesktop.NetworkManager"
+
+	// Methods
+	networkManagerGetAllDevices            = networkManagerInterface + ".GetAllDevices"
+	networkManagerAddAndActivateConnection = networkManagerInterface + ".AddAndActivateConnection"
+)
 
 // Manager network manager
 type Manager interface {
@@ -105,14 +110,7 @@ func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) error {
 		}),
 	}
 
-	// TODO subscribe to signal
-	var retval string
-	err = m.o.Call("org.freedesktop.NetworkManager.AddAndActivateConnection", 0, connSettings, d.o.Path(), a.o.Path()).Store(&retval)
-
-	// TODO TRACE
-	fmt.Printf("RETVAL: %v", retval)
-
-	return err
+	return m.o.Call(networkManagerAddAndActivateConnection, 0, connSettings, d.o.Path(), a.o.Path()).Err
 }
 
 func (m *manager) Disconnect() error {
@@ -122,7 +120,22 @@ func (m *manager) Disconnect() error {
 	}
 
 	for _, d := range devs {
+		// Register to disconnetion event
+		if err := d.subscribeStateChanged(); err != nil {
+			return err
+		}
+
 		if err = d.disconnect(); err != nil {
+			return err
+		}
+
+		var s *dbus.Signal
+		ch := d.listen()
+		for !disconnectedSignal(s) {
+			s = <-ch
+		}
+
+		if err := d.unsubscribeStateChanged(); err != nil {
 			return err
 		}
 	}
@@ -148,7 +161,7 @@ func (m *manager) newDev(path string) *dev {
 
 func (m *manager) devices() ([]*dev, error) {
 	var devPaths []string
-	err := m.o.Call("org.freedesktop.NetworkManager.GetAllDevices", 0).Store(&devPaths)
+	err := m.o.Call(networkManagerGetAllDevices, 0).Store(&devPaths)
 
 	var devs []*dev
 	for _, devPath := range devPaths {
@@ -216,5 +229,4 @@ func (m *manager) getDeviceFromSsid(ssid string) (*dev, error) {
 	}
 
 	return nil, errors.Errorf("Could not find a device for SSID: %v", ssid)
-
 }

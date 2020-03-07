@@ -35,3 +35,9 @@ func (dbb *dbusBase) propAsStr(prop string) (string, error) {
 		return string(v.Value().(dbus.ObjectPath)), nil
 	}
 }
+
+func (dbb *dbusBase) listen() <-chan *dbus.Signal {
+	signal := make(chan *dbus.Signal, 10)
+	dbb.c.Signal(signal)
+	return signal
+}

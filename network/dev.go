@@ -1,6 +1,7 @@
 package network
 
 import (
+	"github.com/godbus/dbus"
 	"github.com/pkg/errors"
 )
 
@@ -8,8 +9,10 @@ const (
 	// WifiDeviceType is the flag determinating a device on dbus
 	WifiDeviceType uint32 = 2
 
+	wifiDeviceDisconnected uint32 = 30
 	// WifiDeviceConnected is the flag determinating if device is connected to a network
-	WifiDeviceConnected uint32 = 100
+	WifiDeviceConnected    uint32 = 100
+	wifiDeviceDeactivating uint32 = 110
 )
 
 const (
@@ -19,13 +22,38 @@ const (
 
 	// Properties
 	deviceActiveConnection = deviceInterface + ".ActiveConnection"
+	deviceState            = deviceInterface + ".State"
+	deviceDeviceType       = deviceInterface + ".DeviceType"
 
 	// Methods
 	deviceWirelessGetAccessPoints = deviceWirelessInterface + ".GetAccessPoints"
+	deviceDisconnect              = deviceInterface + ".Disconnect"
+
+	// Members
+	stateChanged = "StateChanged"
+
+	// Signals
+	deviceStateChanged = deviceInterface + "." + stateChanged
 )
 
 type dev struct {
 	dbusBase
+}
+
+func (d *dev) subscribeStateChanged() error {
+	return d.o.AddMatchSignal(
+		deviceInterface,
+		stateChanged,
+		dbus.WithMatchObjectPath(d.o.Path()),
+	).Err
+}
+
+func (d *dev) unsubscribeStateChanged() error {
+	return d.o.RemoveMatchSignal(
+		deviceInterface,
+		stateChanged,
+		dbus.WithMatchObjectPath(d.o.Path()),
+	).Err
 }
 
 func (d *dev) newAp(path string) *ap {
@@ -35,16 +63,16 @@ func (d *dev) newAp(path string) *ap {
 }
 
 func (d *dev) isConnected() (bool, error) {
-	return d.is("org.freedesktop.NetworkManager.Device.State", WifiDeviceConnected)
+	return d.is(deviceState, WifiDeviceConnected)
 }
 
 func (d *dev) isWifi() (bool, error) {
-	return d.is("org.freedesktop.NetworkManager.Device.DeviceType", WifiDeviceType)
+	return d.is(deviceDeviceType, WifiDeviceType)
 }
 
 func (d *dev) accessPoints() ([]*ap, error) {
 	var apPaths []string
-	err := d.o.Call("org.freedesktop.NetworkManager.Device.Wireless.GetAllAccessPoints", 0).Store(&apPaths)
+	err := d.o.Call(deviceWirelessGetAccessPoints, 0).Store(&apPaths)
 	if err != nil {
 		return nil, err
 	}
@@ -76,13 +104,13 @@ func (d *dev) accessPoint(ssid string) (*ap, error) {
 	return nil, errors.Errorf("Could not find an access point for %v", ssid)
 }
 
+func (d *dev) disconnect() error {
+	return d.o.Call(deviceDisconnect, 0).Err
+}
+
 // func (d *dev) activeConnection() (string, error) {
 // 	return d.propAsStr(deviceActiveConnection)
 // }
-
-func (d *dev) disconnect() error {
-	return d.o.Call("org.freedesktop.NetworkManager.Device.Disconnect", 0).Err
-}
 
 func (d *dev) is(propertyPath string, comparationFlag uint32) (bool, error) {
 	v, err := d.o.GetProperty(propertyPath)
@@ -95,4 +123,12 @@ func (d *dev) is(propertyPath string, comparationFlag uint32) (bool, error) {
 	}
 
 	return v.Value() == comparationFlag, nil
+}
+
+func disconnectedSignal(s *dbus.Signal) bool {
+	if s == nil {
+		return false
+	}
+	status := s.Body[0].(uint32)
+	return status == wifiDeviceDisconnected || status == wifiDeviceDeactivating
 }
