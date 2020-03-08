@@ -14,12 +14,21 @@ const (
 	networkManagerAddAndActivateConnection = networkManagerInterface + ".AddAndActivateConnection"
 )
 
+// ConnectionState the state of the connection taking the values defined as dbus contants
+type ConnectionState uint32
+
+// Enum of States of connection
+const (
+	Disconnected ConnectionState = iota
+	Connected
+)
+
 // Manager network manager
 type Manager interface {
 	Ssids() ([]string, error)
 	Connected() (bool, error)
-	Connect(ssid, passphrase, security, keyMgmt string) error
-	Disconnect() error
+	Connect(ssid, passphrase, security, keyMgmt string) (<-chan ConnectionState, error)
+	Disconnect() (<-chan ConnectionState, error)
 }
 
 type manager struct {
@@ -87,17 +96,17 @@ func (m *manager) Connected() (bool, error) {
 	return false, nil
 }
 
-func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) error {
+func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan ConnectionState, error) {
 	// security is "802-11-wireless-security"
 	// keyMgmt is wpa-psk
 	d, err := m.getDeviceFromSsid(ssid)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	a, err := d.accessPoint(ssid)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	connSettings := map[string]dbus.Variant{
@@ -110,38 +119,52 @@ func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) error {
 		}),
 	}
 
-	return m.o.Call(networkManagerAddAndActivateConnection, 0, connSettings, d.o.Path(), a.o.Path()).Err
-}
+	ch := make(chan ConnectionState)
 
-func (m *manager) Disconnect() error {
-	devs, err := m.connectedWifiDevices()
-	if err != nil {
-		return err
+	if err = d.registerStateChanged(ch); err != nil {
+		return nil, err
 	}
 
+	err = m.o.Call(networkManagerAddAndActivateConnection, 0, connSettings, d.o.Path(), a.o.Path()).Err
+	return ch, err
+}
+
+func (m *manager) Disconnect() (<-chan ConnectionState, error) {
+	devs, err := m.connectedWifiDevices()
+	if err != nil {
+		return nil, err
+	}
+
+	ch := make(chan ConnectionState)
+
 	for _, d := range devs {
-		// Register to disconnetion event
-		if err := d.subscribeStateChanged(); err != nil {
-			return err
+		if err = d.registerStateChanged(ch); err != nil {
+			return nil, err
 		}
 
 		if err = d.disconnect(); err != nil {
-			return err
-		}
-
-		var s *dbus.Signal
-		ch := d.listen()
-		for !disconnectedSignal(s) {
-			s = <-ch
-		}
-
-		if err := d.unsubscribeStateChanged(); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return ch, nil
 }
+
+// func (m *manager) ConnectionStateChangedChannel() (<-chan bool, error) {
+// 	devs, err := m.wifiDevices()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	for _, d := range devs {
+// 		if err = d.subscribeStateChanged(); err != nil {
+// 			return nil, err
+// 		}
+// 	}
+
+// 	ch := make(<-chan bool)
+// 	return ch, nil
+// }
 
 func newManager() (*manager, error) {
 	c, err := dbus.SystemBus()
@@ -155,7 +178,7 @@ func newManager() (*manager, error) {
 
 func (m *manager) newDev(path string) *dev {
 	return &dev{
-		newDbusBase(m.c, path),
+		dbusBase: newDbusBase(m.c, path),
 	}
 }
 

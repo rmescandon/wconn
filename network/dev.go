@@ -38,6 +38,7 @@ const (
 
 type dev struct {
 	dbusBase
+	ch <-chan *dbus.Signal
 }
 
 func (d *dev) subscribeStateChanged() error {
@@ -55,6 +56,41 @@ func (d *dev) unsubscribeStateChanged() error {
 		dbus.WithMatchObjectPath(d.o.Path()),
 	).Err
 }
+
+func (d *dev) registerStateChanged(ch chan ConnectionState) error {
+	d.ch = d.listen()
+	if err := d.subscribeStateChanged(); err != nil {
+		return err
+	}
+
+	if ch == nil {
+		return errors.New("State changed channel is nil")
+	}
+
+	go func() {
+		// Infinite loop until having a connection state change on this device
+		for {
+			signal := <-d.ch
+			switch signalStatus(signal) {
+			case WifiDeviceConnected:
+				ch <- Connected
+				return
+			case wifiDeviceDeactivating:
+				fallthrough
+			case wifiDeviceDisconnected:
+				ch <- Disconnected
+				return
+			}
+		}
+	}()
+
+	return nil
+}
+
+// func (d *dev) StateChangedChannel() <-chan ConnectionState {
+// 	ch := make(<-chan ConnectionState)
+
+// }
 
 func (d *dev) newAp(path string) *ap {
 	return &ap{
@@ -125,10 +161,18 @@ func (d *dev) is(propertyPath string, comparationFlag uint32) (bool, error) {
 	return v.Value() == comparationFlag, nil
 }
 
+func connectedSignal(s *dbus.Signal) bool {
+	return signalStatus(s) == WifiDeviceConnected
+}
+
 func disconnectedSignal(s *dbus.Signal) bool {
-	if s == nil {
-		return false
-	}
-	status := s.Body[0].(uint32)
+	status := signalStatus(s)
 	return status == wifiDeviceDisconnected || status == wifiDeviceDeactivating
+}
+
+func signalStatus(s *dbus.Signal) uint32 {
+	if s == nil {
+		return uint32(0)
+	}
+	return s.Body[0].(uint32)
 }

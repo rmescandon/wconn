@@ -14,5 +14,16 @@ func (cmd *DisconnectCmd) Execute(args []string) error {
 		return err
 	}
 
-	return m.Disconnect()
+	ch, err := m.Disconnect()
+	if err != nil {
+		return err
+	}
+
+	for {
+		st := <-ch
+		if st == network.Disconnected {
+			break
+		}
+	}
+	return nil
 }
