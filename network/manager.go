@@ -1,8 +1,6 @@
 package network
 
 import (
-	"fmt"
-
 	"github.com/godbus/dbus"
 	"github.com/pkg/errors"
 )
@@ -102,10 +100,10 @@ func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan Co
 	// security is "802-11-wireless-security"
 	// keyMgmt is wpa-psk
 
-	// d, err := m.firstAvailableDevice()
-	// if err != nil {
-	// 	return nil, err
-	// }
+	d, err := m.firstAvailableDevice()
+	if err != nil {
+		return nil, err
+	}
 
 	// aps, err := d.accessPoints()
 	// if err != nil {
@@ -116,10 +114,10 @@ func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan Co
 	// }
 	// ap := aps[0]
 
-	d, err := m.getDeviceFromSsid(ssid)
-	if err != nil {
-		return nil, err
-	}
+	// d, err := m.getDeviceFromSsid(ssid)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	a, err := d.accessPoint(ssid)
 	if err != nil {
@@ -153,9 +151,6 @@ func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan Co
 	}
 
 	err = m.o.Call(networkManagerAddAndActivateConnection, 0, connSettings, d.o.Path(), a.o.Path()).Err
-
-	// TODO TRACE
-	fmt.Printf("ERR: %v\n", err)
 	return ch, err
 }
 
