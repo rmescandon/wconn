@@ -1,6 +1,9 @@
 package cli
 
 import (
+	"errors"
+	"time"
+
 	"github.com/greenbrew/wconn/network"
 )
 
@@ -20,10 +23,13 @@ func (cmd *DisconnectCmd) Execute(args []string) error {
 	}
 
 	for {
-		st := <-ch
-		if st == network.Disconnected {
-			break
+		select {
+		case st := <-ch:
+			if st == network.Disconnected {
+				return nil
+			}
+		case <-time.After(5 * time.Second):
+			return errors.New("Timeout")
 		}
 	}
-	return nil
 }

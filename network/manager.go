@@ -1,6 +1,8 @@
 package network
 
 import (
+	"fmt"
+
 	"github.com/godbus/dbus"
 	"github.com/pkg/errors"
 )
@@ -99,6 +101,21 @@ func (m *manager) Connected() (bool, error) {
 func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan ConnectionState, error) {
 	// security is "802-11-wireless-security"
 	// keyMgmt is wpa-psk
+
+	// d, err := m.firstAvailableDevice()
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// aps, err := d.accessPoints()
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if len(aps) == 0 {
+	// 	return nil, errors.New("Could not find access points to connect")
+	// }
+	// ap := aps[0]
+
 	d, err := m.getDeviceFromSsid(ssid)
 	if err != nil {
 		return nil, err
@@ -109,15 +126,25 @@ func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan Co
 		return nil, err
 	}
 
-	connSettings := map[string]dbus.Variant{
-		"802-11-wireless": dbus.MakeVariant(map[string]dbus.Variant{
+	connSettings := map[string]map[string]dbus.Variant{
+		"801-11-wireless": map[string]dbus.Variant{
 			"security": dbus.MakeVariant(security),
-		}),
-		"802-11-wireless-security": dbus.MakeVariant(map[string]dbus.Variant{
+		},
+		"802-11-wireless-security": map[string]dbus.Variant{
 			"key-mgmt": dbus.MakeVariant(keyMgmt),
 			"psk":      dbus.MakeVariant(passphrase),
-		}),
+		},
 	}
+
+	// connSettings := map[string]dbus.Variant{
+	// 	"802-11-wireless": dbus.MakeVariant(map[string]dbus.Variant{
+	// 		"security": dbus.MakeVariant(security),
+	// 	}),
+	// 	"802-11-wireless-security": dbus.MakeVariant(map[string]dbus.Variant{
+	// 		"key-mgmt": dbus.MakeVariant(keyMgmt),
+	// 		"psk":      dbus.MakeVariant(passphrase),
+	// 	}),
+	// }
 
 	ch := make(chan ConnectionState)
 
@@ -126,6 +153,9 @@ func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan Co
 	}
 
 	err = m.o.Call(networkManagerAddAndActivateConnection, 0, connSettings, d.o.Path(), a.o.Path()).Err
+
+	// TODO TRACE
+	fmt.Printf("ERR: %v\n", err)
 	return ch, err
 }
 
@@ -234,6 +264,25 @@ func (m *manager) connectedWifiDevices() ([]*dev, error) {
 		}
 	}
 	return cDevs, nil
+}
+
+func (m *manager) firstAvailableDevice() (*dev, error) {
+	devs, err := m.wifiDevices()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, d := range devs {
+		b, err := d.isConnected()
+		if err != nil {
+			return nil, err
+		}
+
+		if !b {
+			return d, nil
+		}
+	}
+	return nil, errors.New("Could not find an available WiFi device")
 }
 
 func (m *manager) getDeviceFromSsid(ssid string) (*dev, error) {
