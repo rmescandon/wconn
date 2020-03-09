@@ -97,27 +97,10 @@ func (m *manager) Connected() (bool, error) {
 }
 
 func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan ConnectionState, error) {
-	// security is "802-11-wireless-security"
-	// keyMgmt is wpa-psk
-
-	d, err := m.firstAvailableDevice()
+	d, err := m.firstAvailableWifiDevice()
 	if err != nil {
 		return nil, err
 	}
-
-	// aps, err := d.accessPoints()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if len(aps) == 0 {
-	// 	return nil, errors.New("Could not find access points to connect")
-	// }
-	// ap := aps[0]
-
-	// d, err := m.getDeviceFromSsid(ssid)
-	// if err != nil {
-	// 	return nil, err
-	// }
 
 	a, err := d.accessPoint(ssid)
 	if err != nil {
@@ -133,16 +116,6 @@ func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan Co
 			"psk":      dbus.MakeVariant(passphrase),
 		},
 	}
-
-	// connSettings := map[string]dbus.Variant{
-	// 	"802-11-wireless": dbus.MakeVariant(map[string]dbus.Variant{
-	// 		"security": dbus.MakeVariant(security),
-	// 	}),
-	// 	"802-11-wireless-security": dbus.MakeVariant(map[string]dbus.Variant{
-	// 		"key-mgmt": dbus.MakeVariant(keyMgmt),
-	// 		"psk":      dbus.MakeVariant(passphrase),
-	// 	}),
-	// }
 
 	ch := make(chan ConnectionState)
 
@@ -174,22 +147,6 @@ func (m *manager) Disconnect() (<-chan ConnectionState, error) {
 
 	return ch, nil
 }
-
-// func (m *manager) ConnectionStateChangedChannel() (<-chan bool, error) {
-// 	devs, err := m.wifiDevices()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	for _, d := range devs {
-// 		if err = d.subscribeStateChanged(); err != nil {
-// 			return nil, err
-// 		}
-// 	}
-
-// 	ch := make(<-chan bool)
-// 	return ch, nil
-// }
 
 func newManager() (*manager, error) {
 	c, err := dbus.SystemBus()
@@ -261,7 +218,7 @@ func (m *manager) connectedWifiDevices() ([]*dev, error) {
 	return cDevs, nil
 }
 
-func (m *manager) firstAvailableDevice() (*dev, error) {
+func (m *manager) firstAvailableWifiDevice() (*dev, error) {
 	devs, err := m.wifiDevices()
 	if err != nil {
 		return nil, err
