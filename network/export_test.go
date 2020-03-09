@@ -6,7 +6,6 @@ import (
 )
 
 func MockBusObject(m *mocks.MockBusObject) {
-
 	newDbusBase = func(c *dbus.Conn, path string) dbusBase {
 		return dbusBase{
 			c: &dbus.Conn{},

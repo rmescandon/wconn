@@ -82,7 +82,7 @@ func (s *NetworkSuite) TestGetAvailableSsids(c *check.C) {
 	).Times(nNotWifiDevices)
 
 	// Get the access points
-	s.mockBusObject.EXPECT().Call("org.freedesktop.NetworkManager.Device.Wireless.GetAllAccessPoints", gomock.Any()).Return(
+	s.mockBusObject.EXPECT().Call("org.freedesktop.NetworkManager.Device.Wireless.GetAccessPoints", gomock.Any()).Return(
 		&dbus.Call{
 			Body: []interface{}{aps},
 		})
