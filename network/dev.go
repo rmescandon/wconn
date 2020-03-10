@@ -28,6 +28,7 @@ const (
 	// Methods
 	deviceWirelessGetAccessPoints = deviceWirelessInterface + ".GetAccessPoints"
 	deviceDisconnect              = deviceInterface + ".Disconnect"
+	deviceAvailableConnections    = deviceInterface + ".AvailableConnections"
 
 	// Members
 	stateChanged = "StateChanged"
@@ -43,6 +44,12 @@ type dev struct {
 
 func (d *dev) newAp(path string) *ap {
 	return &ap{
+		newDbusBase(d.c, path),
+	}
+}
+
+func (d *dev) newConn(path string) *conn {
+	return &conn{
 		newDbusBase(d.c, path),
 	}
 }
@@ -91,6 +98,19 @@ func (d *dev) accessPoint(ssid string) (*ap, error) {
 
 func (d *dev) disconnect() error {
 	return d.o.Call(deviceDisconnect, 0).Err
+}
+
+func (d *dev) conns() ([]*conn, error) {
+	connPaths, err := d.propAsStrArray(deviceAvailableConnections)
+	if err != nil {
+		return nil, err
+	}
+
+	var conns []*conn
+	for _, connPath := range connPaths {
+		conns = append(conns, d.newConn(connPath))
+	}
+	return conns, nil
 }
 
 func (d *dev) is(propertyPath string, comparationFlag uint32) (bool, error) {

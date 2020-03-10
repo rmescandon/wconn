@@ -36,6 +36,28 @@ func (dbb *dbusBase) propAsStr(prop string) (string, error) {
 	}
 }
 
+func (dbb *dbusBase) propAsBool(prop string) (bool, error) {
+	v, err := dbb.prop(prop)
+	if err != nil {
+		return false, err
+	}
+
+	return v.Value().(bool), nil
+}
+
+func (dbb *dbusBase) propAsStrArray(prop string) ([]string, error) {
+	vals, err := dbb.prop(prop)
+	if err != nil {
+		return nil, err
+	}
+
+	var ret []string
+	for _, v := range vals.Value().([]dbus.ObjectPath) {
+		ret = append(ret, string(v))
+	}
+	return ret, nil
+}
+
 func (dbb *dbusBase) listen() <-chan *dbus.Signal {
 	signal := make(chan *dbus.Signal, 10)
 	dbb.c.Signal(signal)

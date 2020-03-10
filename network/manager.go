@@ -11,7 +11,12 @@ const (
 
 	// Methods
 	networkManagerGetAllDevices            = networkManagerInterface + ".GetAllDevices"
+	networkManagerActivateConnection       = networkManagerInterface + ".ActivateConnection"
 	networkManagerAddAndActivateConnection = networkManagerInterface + ".AddAndActivateConnection"
+	newworkManagerEnable                   = networkManagerInterface + ".Enable"
+
+	// Properties
+	networkManagerNetworkingEnabled = networkManagerInterface + ".NetworkingEnabled"
 )
 
 // ConnectionState the state of the connection taking the values defined as dbus contants
@@ -97,9 +102,30 @@ func (m *manager) Connected() (bool, error) {
 }
 
 func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan ConnectionState, error) {
+	if err := m.enable(true); err != nil {
+		return nil, err
+	}
+
 	d, err := m.firstAvailableWifiDevice()
 	if err != nil {
 		return nil, err
+	}
+
+	// Check old connections
+	var oldConn *conn
+	cs, err := d.conns()
+	if err != nil {
+		return nil, err
+	}
+	for _, c := range cs {
+		historicSsid, err := c.ssid()
+		if err != nil {
+			return nil, err
+		}
+		if historicSsid == ssid {
+			oldConn = c
+			break
+		}
 	}
 
 	a, err := d.accessPoint(ssid)
@@ -107,7 +133,23 @@ func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan Co
 		return nil, err
 	}
 
-	connSettings := map[string]map[string]dbus.Variant{
+	ch := make(chan ConnectionState)
+
+	if err = d.registerStateChanged(ch); err != nil {
+		return nil, err
+	}
+
+	if oldConn != nil {
+		err = m.reconnect(oldConn, d, a)
+	} else {
+		err = m.connect(passphrase, security, keyMgmt, d, a)
+	}
+
+	return ch, err
+}
+
+func (m *manager) connect(passphrase, security, keyMgmt string, d *dev, a *ap) error {
+	settings := map[string]map[string]dbus.Variant{
 		"801-11-wireless": map[string]dbus.Variant{
 			"security": dbus.MakeVariant(security),
 		},
@@ -117,14 +159,11 @@ func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan Co
 		},
 	}
 
-	ch := make(chan ConnectionState)
+	return m.o.Call(networkManagerAddAndActivateConnection, 0, settings, d.o.Path(), a.o.Path()).Err
+}
 
-	if err = d.registerStateChanged(ch); err != nil {
-		return nil, err
-	}
-
-	err = m.o.Call(networkManagerAddAndActivateConnection, 0, connSettings, d.o.Path(), a.o.Path()).Err
-	return ch, err
+func (m *manager) reconnect(c *conn, d *dev, a *ap) error {
+	return m.o.Call(networkManagerActivateConnection, 0, c.o.Path(), d.o.Path(), a.o.Path()).Err
 }
 
 func (m *manager) Disconnect() (<-chan ConnectionState, error) {
@@ -162,6 +201,17 @@ func (m *manager) newDev(path string) *dev {
 	return &dev{
 		dbusBase: newDbusBase(m.c, path),
 	}
+}
+
+func (m *manager) enable(flag bool) error {
+	if b, err := m.enabled(); err != nil || b {
+		return err
+	}
+	return m.o.Call(newworkManagerEnable, 0, dbus.MakeVariant(flag)).Err
+}
+
+func (m *manager) enabled() (bool, error) {
+	return m.propAsBool(networkManagerNetworkingEnabled)
 }
 
 func (m *manager) devices() ([]*dev, error) {
