@@ -1,10 +1,8 @@
 package network
 
-const (
-	// Interface
-	networkManagerSettingsInterface           = networkManagerInterface + ".Settings"
-	networkManagerSettingsConnectionInterface = networkManagerSettingsInterface + ".Connection"
+import "github.com/pkg/errors"
 
+const (
 	// Methods
 	networkManagerSettingsConnectionGetSettings = networkManagerSettingsConnectionInterface + ".GetSettings"
 	networkManagerSettingsConnectionDelete      = networkManagerSettingsConnectionInterface + ".Delete"
@@ -15,24 +13,46 @@ type conn struct {
 }
 
 func (c *conn) ssid() (string, error) {
-	var settings map[string]interface{}
-	err := c.o.Call(networkManagerSettingsConnectionGetSettings, 0).Store(&settings)
+	s, err := c.wifiSettings()
 	if err != nil {
 		return "", err
+	}
+	val, ok := s["ssid"]
+	if !ok {
+		return "", errors.New("Could not find 'ssid' WiFi setting")
+	}
+
+	return string(val.([]byte)), nil
+}
+
+func (c *conn) wifiSettings() (map[string]interface{}, error) {
+	settings, err := c.settings()
+	if err != nil {
+		return nil, err
 	}
 
 	s, ok := settings["802-11-wireless"]
 	if !ok {
-		return "", nil
+		return nil, errors.New("Could not find WiFi settings")
 	}
 
-	wifiSettings := s.(map[string]interface{})
-	val, ok := wifiSettings["ssid"]
-	if !ok {
-		return "", nil
+	return s.(map[string]interface{}), nil
+}
+
+func (c *conn) isWifi() (bool, error) {
+	settings, err := c.settings()
+	if err != nil {
+		return false, err
 	}
 
-	return string(val.([]byte)), nil
+	_, ok := settings["802-11-wireless"]
+	return ok, nil
+}
+
+func (c *conn) settings() (map[string]interface{}, error) {
+	var settings map[string]interface{}
+	err := c.o.Call(networkManagerSettingsConnectionGetSettings, 0).Store(&settings)
+	return settings, err
 }
 
 func (c *conn) delete() error {

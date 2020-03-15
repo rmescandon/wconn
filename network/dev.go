@@ -48,12 +48,6 @@ func (d *dev) newAp(path string) *ap {
 	}
 }
 
-func (d *dev) newConn(path string) *conn {
-	return &conn{
-		newDbusBase(d.c, path),
-	}
-}
-
 func (d *dev) isConnected() (bool, error) {
 	return d.is(deviceState, WifiDeviceConnected)
 }

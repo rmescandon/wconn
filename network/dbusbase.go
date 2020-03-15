@@ -16,6 +16,12 @@ var newDbusBase = func(c *dbus.Conn, path string) dbusBase {
 	}
 }
 
+func (dbb *dbusBase) newConn(path string) *conn {
+	return &conn{
+		newDbusBase(dbb.c, path),
+	}
+}
+
 func (dbb *dbusBase) prop(prop string) (dbus.Variant, error) {
 	return dbb.o.GetProperty(prop)
 }

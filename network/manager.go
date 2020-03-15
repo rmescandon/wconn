@@ -17,6 +17,10 @@ const (
 
 	// Properties
 	networkManagerNetworkingEnabled = networkManagerInterface + ".NetworkingEnabled"
+
+	// Objects
+	networkManagerObject         = "/org/freedesktop/NetworkManager"
+	networkManagerSettingsObject = networkManagerObject + "/Settings"
 )
 
 // ConnectionState the state of the connection taking the values defined as dbus contants
@@ -171,30 +175,16 @@ func (m *manager) Disconnect() (<-chan ConnectionState, error) {
 }
 
 func (m *manager) PruneConnections() error {
-	devs, err := m.wifiDevices()
+	s := m.newManagerSettings()
+	cs, err := s.wifiConns()
 	if err != nil {
 		return err
 	}
 
-	for _, d := range devs {
-		ac, err := d.activeConnection()
+	for _, c := range cs {
+		err = c.delete()
 		if err != nil {
 			return err
-		}
-
-		cs, err := d.conns()
-		if err != nil {
-			return err
-		}
-
-		for _, c := range cs {
-			// Skip active connection
-			if c.o.Path() == ac.o.Path() {
-				continue
-			}
-			if err := c.delete(); err != nil {
-				return err
-			}
 		}
 	}
 	return nil
@@ -206,8 +196,14 @@ func newManager() (*manager, error) {
 		return nil, errors.Errorf("Error getting system dbus reference: %v", err)
 	}
 
-	db := newDbusBase(c, "/org/freedesktop/NetworkManager")
+	db := newDbusBase(c, networkManagerObject)
 	return &manager{db}, nil
+}
+
+func (m *manager) newManagerSettings() *managerSettings {
+	return &managerSettings{
+		newDbusBase(m.c, networkManagerSettingsObject),
+	}
 }
 
 func (m *manager) newDev(path string) *dev {
