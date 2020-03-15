@@ -7,6 +7,7 @@ const (
 
 	// Methods
 	networkManagerSettingsConnectionGetSettings = networkManagerSettingsConnectionInterface + ".GetSettings"
+	networkManagerSettingsConnectionDelete      = networkManagerSettingsConnectionInterface + ".Delete"
 )
 
 type conn struct {
@@ -32,4 +33,8 @@ func (c *conn) ssid() (string, error) {
 	}
 
 	return string(val.([]byte)), nil
+}
+
+func (c *conn) delete() error {
+	return c.o.Call(networkManagerSettingsConnectionDelete, 0).Err
 }

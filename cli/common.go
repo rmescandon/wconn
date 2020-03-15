@@ -9,4 +9,5 @@ type Cmd struct {
 	Disconnect DisconnectCmd `command:"disconnect" description:"Disconnects from current WiFi connected network"`
 	List       ListCmd       `command:"list" alias:"ls" description:"Lists available WiFi networks"`
 	Connected  ConnectedCmd  `command:"connected" description:"Returns true if connected to a WiFi network"`
+	Prune      PruneCmd      `command:"prune" description:"Prunes all WiFi connections that are not active"`
 }

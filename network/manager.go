@@ -34,6 +34,7 @@ type Manager interface {
 	Connected() (bool, error)
 	Connect(ssid, passphrase, security, keyMgmt string) (<-chan ConnectionState, error)
 	Disconnect() (<-chan ConnectionState, error)
+	PruneConnections() error
 }
 
 type manager struct {
@@ -148,24 +149,6 @@ func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan Co
 	return ch, err
 }
 
-func (m *manager) connect(passphrase, security, keyMgmt string, d *dev, a *ap) error {
-	settings := map[string]map[string]dbus.Variant{
-		"801-11-wireless": map[string]dbus.Variant{
-			"security": dbus.MakeVariant(security),
-		},
-		"802-11-wireless-security": map[string]dbus.Variant{
-			"key-mgmt": dbus.MakeVariant(keyMgmt),
-			"psk":      dbus.MakeVariant(passphrase),
-		},
-	}
-
-	return m.o.Call(networkManagerAddAndActivateConnection, 0, settings, d.o.Path(), a.o.Path()).Err
-}
-
-func (m *manager) reconnect(c *conn, d *dev, a *ap) error {
-	return m.o.Call(networkManagerActivateConnection, 0, c.o.Path(), d.o.Path(), a.o.Path()).Err
-}
-
 func (m *manager) Disconnect() (<-chan ConnectionState, error) {
 	devs, err := m.connectedWifiDevices()
 	if err != nil {
@@ -185,6 +168,36 @@ func (m *manager) Disconnect() (<-chan ConnectionState, error) {
 	}
 
 	return ch, nil
+}
+
+func (m *manager) PruneConnections() error {
+	devs, err := m.wifiDevices()
+	if err != nil {
+		return err
+	}
+
+	for _, d := range devs {
+		ac, err := d.activeConnection()
+		if err != nil {
+			return err
+		}
+
+		cs, err := d.conns()
+		if err != nil {
+			return err
+		}
+
+		for _, c := range cs {
+			// Skip active connection
+			if c.o.Path() == ac.o.Path() {
+				continue
+			}
+			if err := c.delete(); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func newManager() (*manager, error) {
@@ -303,4 +316,22 @@ func (m *manager) getDeviceFromSsid(ssid string) (*dev, error) {
 	}
 
 	return nil, errors.Errorf("Could not find a device for SSID: %v", ssid)
+}
+
+func (m *manager) connect(passphrase, security, keyMgmt string, d *dev, a *ap) error {
+	settings := map[string]map[string]dbus.Variant{
+		"801-11-wireless": map[string]dbus.Variant{
+			"security": dbus.MakeVariant(security),
+		},
+		"802-11-wireless-security": map[string]dbus.Variant{
+			"key-mgmt": dbus.MakeVariant(keyMgmt),
+			"psk":      dbus.MakeVariant(passphrase),
+		},
+	}
+
+	return m.o.Call(networkManagerAddAndActivateConnection, 0, settings, d.o.Path(), a.o.Path()).Err
+}
+
+func (m *manager) reconnect(c *conn, d *dev, a *ap) error {
+	return m.o.Call(networkManagerActivateConnection, 0, c.o.Path(), d.o.Path(), a.o.Path()).Err
 }

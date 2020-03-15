@@ -96,6 +96,14 @@ func (d *dev) accessPoint(ssid string) (*ap, error) {
 	return nil, errors.Errorf("Could not find an access point for %v", ssid)
 }
 
+func (d *dev) activeConnection() (*conn, error) {
+	str, err := d.propAsStr(deviceActiveConnection)
+	if err != nil {
+		return nil, err
+	}
+	return d.newConn(str), nil
+}
+
 func (d *dev) disconnect() error {
 	return d.o.Call(deviceDisconnect, 0).Err
 }
