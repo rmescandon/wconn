@@ -17,24 +17,24 @@ const (
 
 const (
 	// Interfaces
-	deviceInterface         = networkManagerInterface + ".Device"
-	deviceWirelessInterface = deviceInterface + ".Wireless"
+	deviceIface         = managerIface + ".Device"
+	deviceWirelessIface = deviceIface + ".Wireless"
 
 	// Properties
-	deviceActiveConnection = deviceInterface + ".ActiveConnection"
-	deviceState            = deviceInterface + ".State"
-	deviceDeviceType       = deviceInterface + ".DeviceType"
+	deviceActiveConnection = deviceIface + ".ActiveConnection"
+	deviceState            = deviceIface + ".State"
+	deviceDeviceType       = deviceIface + ".DeviceType"
 
 	// Methods
-	deviceWirelessGetAccessPoints = deviceWirelessInterface + ".GetAccessPoints"
-	deviceDisconnect              = deviceInterface + ".Disconnect"
-	deviceAvailableConnections    = deviceInterface + ".AvailableConnections"
+	deviceWirelessGetAccessPoints = deviceWirelessIface + ".GetAccessPoints"
+	deviceDisconnect              = deviceIface + ".Disconnect"
+	deviceAvailableConnections    = deviceIface + ".AvailableConnections"
 
 	// Members
 	stateChanged = "StateChanged"
 
 	// Signals
-	deviceStateChanged = deviceInterface + "." + stateChanged
+	deviceStateChanged = deviceIface + "." + stateChanged
 )
 
 type dev struct {
@@ -136,7 +136,7 @@ func (d *dev) is(propertyPath string, comparationFlag uint32) (bool, error) {
 
 func (d *dev) subscribeStateChanged() error {
 	return d.o.AddMatchSignal(
-		deviceInterface,
+		deviceIface,
 		stateChanged,
 		dbus.WithMatchObjectPath(d.o.Path()),
 	).Err
@@ -144,7 +144,7 @@ func (d *dev) subscribeStateChanged() error {
 
 func (d *dev) unsubscribeStateChanged() error {
 	return d.o.RemoveMatchSignal(
-		deviceInterface,
+		deviceIface,
 		stateChanged,
 		dbus.WithMatchObjectPath(d.o.Path()),
 	).Err

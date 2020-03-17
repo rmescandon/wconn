@@ -6,11 +6,11 @@ import (
 
 const (
 	// Interface
-	networkManagerSettingsConnectionInterface = networkManagerSettingsInterface + ".Connection"
+	settingsConnectionIface = settingsIface + ".Connection"
 
 	// Methods
-	networkManagerSettingsConnectionGetSettings = networkManagerSettingsConnectionInterface + ".GetSettings"
-	networkManagerSettingsConnectionDelete      = networkManagerSettingsConnectionInterface + ".Delete"
+	settingsConnectionGetSettings = settingsConnectionIface + ".GetSettings"
+	settingsConnectionDelete      = settingsConnectionIface + ".Delete"
 )
 
 type conn struct {
@@ -78,10 +78,10 @@ func (c *conn) isWifi() (bool, error) {
 
 func (c *conn) getSettings() (map[string]interface{}, error) {
 	var st map[string]interface{}
-	err := c.o.Call(networkManagerSettingsConnectionGetSettings, 0).Store(&st)
+	err := c.o.Call(settingsConnectionGetSettings, 0).Store(&st)
 	return st, err
 }
 
 func (c *conn) delete() error {
-	return c.o.Call(networkManagerSettingsConnectionDelete, 0).Err
+	return c.o.Call(settingsConnectionDelete, 0).Err
 }

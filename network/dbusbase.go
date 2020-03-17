@@ -4,6 +4,11 @@ import (
 	"github.com/godbus/dbus"
 )
 
+const (
+	// Interfaces
+	managerIface = "org.freedesktop.NetworkManager"
+)
+
 type dbusBase struct {
 	c *dbus.Conn
 	o dbus.BusObject
@@ -12,7 +17,7 @@ type dbusBase struct {
 var newDbusBase = func(c *dbus.Conn, path string) dbusBase {
 	return dbusBase{
 		c: c,
-		o: c.Object("org.freedesktop.NetworkManager", dbus.ObjectPath(path)),
+		o: c.Object(managerIface, dbus.ObjectPath(path)),
 	}
 }
 

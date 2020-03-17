@@ -2,10 +2,10 @@ package network
 
 const (
 	// Interface
-	networkManagerSettingsInterface = networkManagerInterface + ".Settings"
+	settingsIface = managerIface + ".Settings"
 
 	// Methods
-	networkManagerSettingsListConnections = networkManagerSettingsInterface + ".ListConnections"
+	settingsListConnections = settingsIface + ".ListConnections"
 )
 
 type settings struct {
@@ -14,7 +14,7 @@ type settings struct {
 
 func (s *settings) listConnections() ([]*conn, error) {
 	var paths []string
-	err := s.o.Call(networkManagerSettingsListConnections, 0).Store(&paths)
+	err := s.o.Call(settingsListConnections, 0).Store(&paths)
 	if err != nil {
 		return nil, err
 	}

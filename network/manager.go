@@ -6,21 +6,18 @@ import (
 )
 
 const (
-	// Interfaces
-	networkManagerInterface = "org.freedesktop.NetworkManager"
-
 	// Methods
-	networkManagerGetAllDevices            = networkManagerInterface + ".GetAllDevices"
-	networkManagerActivateConnection       = networkManagerInterface + ".ActivateConnection"
-	networkManagerAddAndActivateConnection = networkManagerInterface + ".AddAndActivateConnection"
-	newworkManagerEnable                   = networkManagerInterface + ".Enable"
+	managerGetAllDevices            = managerIface + ".GetAllDevices"
+	managerActivateConnection       = managerIface + ".ActivateConnection"
+	managerAddAndActivateConnection = managerIface + ".AddAndActivateConnection"
+	managerEnable                   = managerIface + ".Enable"
 
 	// Properties
-	networkManagerNetworkingEnabled = networkManagerInterface + ".NetworkingEnabled"
+	managerNetworkingEnabled = managerIface + ".NetworkingEnabled"
 
 	// Objects
-	networkManagerObject         = "/org/freedesktop/NetworkManager"
-	networkManagerSettingsObject = networkManagerObject + "/Settings"
+	managerObject         = "/org/freedesktop/NetworkManager"
+	managerSettingsObject = managerObject + "/Settings"
 )
 
 // ConnectionState the state of the connection taking the values defined as dbus contants
@@ -232,13 +229,13 @@ func newManager() (*manager, error) {
 		return nil, errors.Errorf("Error getting system dbus reference: %v", err)
 	}
 
-	db := newDbusBase(c, networkManagerObject)
+	db := newDbusBase(c, managerObject)
 	return &manager{db}, nil
 }
 
 func (m *manager) newManagerSettings() *settings {
 	return &settings{
-		newDbusBase(m.c, networkManagerSettingsObject),
+		newDbusBase(m.c, managerSettingsObject),
 	}
 }
 
@@ -252,16 +249,16 @@ func (m *manager) enable(flag bool) error {
 	if b, err := m.enabled(); err != nil || b {
 		return err
 	}
-	return m.o.Call(newworkManagerEnable, 0, dbus.MakeVariant(flag)).Err
+	return m.o.Call(managerEnable, 0, dbus.MakeVariant(flag)).Err
 }
 
 func (m *manager) enabled() (bool, error) {
-	return m.propAsBool(networkManagerNetworkingEnabled)
+	return m.propAsBool(managerNetworkingEnabled)
 }
 
 func (m *manager) devices() ([]*dev, error) {
 	var devPaths []string
-	err := m.o.Call(networkManagerGetAllDevices, 0).Store(&devPaths)
+	err := m.o.Call(managerGetAllDevices, 0).Store(&devPaths)
 
 	var devs []*dev
 	for _, devPath := range devPaths {
@@ -361,9 +358,9 @@ func (m *manager) connect(passphrase, security, keyMgmt string, d *dev, a *ap) e
 		},
 	}
 
-	return m.o.Call(networkManagerAddAndActivateConnection, 0, settings, d.o.Path(), a.o.Path()).Err
+	return m.o.Call(managerAddAndActivateConnection, 0, settings, d.o.Path(), a.o.Path()).Err
 }
 
 func (m *manager) reconnect(c *conn, d *dev, a *ap) error {
-	return m.o.Call(networkManagerActivateConnection, 0, c.o.Path(), d.o.Path(), a.o.Path()).Err
+	return m.o.Call(managerActivateConnection, 0, c.o.Path(), d.o.Path(), a.o.Path()).Err
 }

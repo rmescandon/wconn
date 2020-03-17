@@ -2,10 +2,10 @@ package network
 
 const (
 	// Interfaces
-	networkManagerConnectionActiveInterface = networkManagerInterface + ".Connection.Active"
+	connectionActiveIface = managerIface + ".Connection.Active"
 
 	// Properties
-	networkManagerConnectionActiveUUID = networkManagerConnectionActiveInterface + ".Uuid"
+	connectionActiveUUID = connectionActiveIface + ".Uuid"
 )
 
 type activeConn struct {
@@ -13,5 +13,5 @@ type activeConn struct {
 }
 
 func (ac *activeConn) uuid() (string, error) {
-	return ac.propAsStr(networkManagerConnectionActiveUUID)
+	return ac.propAsStr(connectionActiveUUID)
 }
