@@ -108,13 +108,13 @@ func (d *dev) disconnect() error {
 	return d.o.Call(deviceDisconnect, 0).Err
 }
 
-func (d *dev) conns() ([]*settingsConn, error) {
+func (d *dev) conns() ([]*conn, error) {
 	connPaths, err := d.propAsStrArray(deviceAvailableConnections)
 	if err != nil {
 		return nil, err
 	}
 
-	var conns []*settingsConn
+	var conns []*conn
 	for _, connPath := range connPaths {
 		conns = append(conns, d.newConn(connPath))
 	}

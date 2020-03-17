@@ -117,7 +117,7 @@ func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan Co
 	}
 
 	// Check old connections
-	var oldConn *settingsConn
+	var oldConn *conn
 	cs, err := d.conns()
 	if err != nil {
 		return nil, err
@@ -364,6 +364,6 @@ func (m *manager) connect(passphrase, security, keyMgmt string, d *dev, a *ap) e
 	return m.o.Call(networkManagerAddAndActivateConnection, 0, settings, d.o.Path(), a.o.Path()).Err
 }
 
-func (m *manager) reconnect(c *settingsConn, d *dev, a *ap) error {
+func (m *manager) reconnect(c *conn, d *dev, a *ap) error {
 	return m.o.Call(networkManagerActivateConnection, 0, c.o.Path(), d.o.Path(), a.o.Path()).Err
 }

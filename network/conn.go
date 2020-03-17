@@ -13,11 +13,11 @@ const (
 	networkManagerSettingsConnectionDelete      = networkManagerSettingsConnectionInterface + ".Delete"
 )
 
-type settingsConn struct {
+type conn struct {
 	dbusBase
 }
 
-func (c *settingsConn) uuid() (string, error) {
+func (c *conn) uuid() (string, error) {
 	s, err := c.connSettings()
 	if err != nil {
 		return "", err
@@ -31,7 +31,7 @@ func (c *settingsConn) uuid() (string, error) {
 	return val.(string), nil
 }
 
-func (c *settingsConn) ssid() (string, error) {
+func (c *conn) ssid() (string, error) {
 	s, err := c.wifiSettings()
 	if err != nil {
 		return "", err
@@ -44,15 +44,15 @@ func (c *settingsConn) ssid() (string, error) {
 	return string(val.([]byte)), nil
 }
 
-func (c *settingsConn) wifiSettings() (map[string]interface{}, error) {
+func (c *conn) wifiSettings() (map[string]interface{}, error) {
 	return c.subsettings("802-11-wireless")
 }
 
-func (c *settingsConn) connSettings() (map[string]interface{}, error) {
+func (c *conn) connSettings() (map[string]interface{}, error) {
 	return c.subsettings("connection")
 }
 
-func (c *settingsConn) subsettings(key string) (map[string]interface{}, error) {
+func (c *conn) subsettings(key string) (map[string]interface{}, error) {
 	st, err := c.getSettings()
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (c *settingsConn) subsettings(key string) (map[string]interface{}, error) {
 	return s.(map[string]interface{}), nil
 }
 
-func (c *settingsConn) isWifi() (bool, error) {
+func (c *conn) isWifi() (bool, error) {
 	st, err := c.getSettings()
 	if err != nil {
 		return false, err
@@ -76,12 +76,12 @@ func (c *settingsConn) isWifi() (bool, error) {
 	return ok, nil
 }
 
-func (c *settingsConn) getSettings() (map[string]interface{}, error) {
+func (c *conn) getSettings() (map[string]interface{}, error) {
 	var st map[string]interface{}
 	err := c.o.Call(networkManagerSettingsConnectionGetSettings, 0).Store(&st)
 	return st, err
 }
 
-func (c *settingsConn) delete() error {
+func (c *conn) delete() error {
 	return c.o.Call(networkManagerSettingsConnectionDelete, 0).Err
 }
