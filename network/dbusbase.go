@@ -16,8 +16,8 @@ var newDbusBase = func(c *dbus.Conn, path string) dbusBase {
 	}
 }
 
-func (dbb *dbusBase) newConn(path string) *conn {
-	return &conn{
+func (dbb *dbusBase) newConn(path string) *settingsConn {
+	return &settingsConn{
 		newDbusBase(dbb.c, path),
 	}
 }

@@ -2,38 +2,37 @@ package network
 
 const (
 	// Interface
-	networkManagerSettingsInterface           = networkManagerInterface + ".Settings"
-	networkManagerSettingsConnectionInterface = networkManagerSettingsInterface + ".Connection"
+	networkManagerSettingsInterface = networkManagerInterface + ".Settings"
 
 	// Methods
 	networkManagerSettingsListConnections = networkManagerSettingsInterface + ".ListConnections"
 )
 
-type managerSettings struct {
+type settings struct {
 	dbusBase
 }
 
-func (s *managerSettings) listConnections() ([]*conn, error) {
+func (s *settings) listConnections() ([]*settingsConn, error) {
 	var paths []string
 	err := s.o.Call(networkManagerSettingsListConnections, 0).Store(&paths)
 	if err != nil {
 		return nil, err
 	}
 
-	var cs []*conn
+	var cs []*settingsConn
 	for _, p := range paths {
 		cs = append(cs, s.newConn(p))
 	}
 	return cs, nil
 }
 
-func (s *managerSettings) wifiConns() ([]*conn, error) {
+func (s *settings) wifiConns() ([]*settingsConn, error) {
 	cs, err := s.listConnections()
 	if err != nil {
 		return nil, err
 	}
 
-	var wCs []*conn
+	var wCs []*settingsConn
 	for _, c := range cs {
 		b, err := c.isWifi()
 		if err != nil {

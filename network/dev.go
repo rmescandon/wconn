@@ -48,6 +48,12 @@ func (d *dev) newAp(path string) *ap {
 	}
 }
 
+func (d *dev) newActiveConn(path string) *activeConn {
+	return &activeConn{
+		newDbusBase(d.c, path),
+	}
+}
+
 func (d *dev) isConnected() (bool, error) {
 	return d.is(deviceState, WifiDeviceConnected)
 }
@@ -90,25 +96,25 @@ func (d *dev) accessPoint(ssid string) (*ap, error) {
 	return nil, errors.Errorf("Could not find an access point for %v", ssid)
 }
 
-func (d *dev) activeConnection() (*conn, error) {
+func (d *dev) activeConnection() (*activeConn, error) {
 	str, err := d.propAsStr(deviceActiveConnection)
 	if err != nil {
 		return nil, err
 	}
-	return d.newConn(str), nil
+	return d.newActiveConn(str), nil
 }
 
 func (d *dev) disconnect() error {
 	return d.o.Call(deviceDisconnect, 0).Err
 }
 
-func (d *dev) conns() ([]*conn, error) {
+func (d *dev) conns() ([]*settingsConn, error) {
 	connPaths, err := d.propAsStrArray(deviceAvailableConnections)
 	if err != nil {
 		return nil, err
 	}
 
-	var conns []*conn
+	var conns []*settingsConn
 	for _, connPath := range connPaths {
 		conns = append(conns, d.newConn(connPath))
 	}

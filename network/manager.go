@@ -117,7 +117,7 @@ func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan Co
 	}
 
 	// Check old connections
-	var oldConn *conn
+	var oldConn *settingsConn
 	cs, err := d.conns()
 	if err != nil {
 		return nil, err
@@ -181,10 +181,46 @@ func (m *manager) PruneConnections() error {
 		return err
 	}
 
-	for _, c := range cs {
-		err = c.delete()
-		if err != nil {
-			return err
+	devs, err := m.wifiDevices()
+	if err != nil {
+		return err
+	}
+
+	var connectedUUID string
+	for _, d := range devs {
+		if len(connectedUUID) == 0 {
+			b, err := d.isConnected()
+			if err != nil {
+				return err
+			}
+			if b {
+				// TODO FIXME: This active connection is a /org/freedesktop/NetworkManager/ActiveConnection/30 instead of /org/freedesktop/NetworkManager/Settings/4
+				ac, err := d.activeConnection()
+				if err != nil {
+					return err
+				}
+				connectedUUID, err = ac.uuid()
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		for _, c := range cs {
+			if len(connectedUUID) > 0 {
+				uuid, err := c.uuid()
+				if err != nil {
+					return err
+				}
+				if uuid == connectedUUID {
+					continue
+				}
+			}
+
+			err = c.delete()
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -200,8 +236,8 @@ func newManager() (*manager, error) {
 	return &manager{db}, nil
 }
 
-func (m *manager) newManagerSettings() *managerSettings {
-	return &managerSettings{
+func (m *manager) newManagerSettings() *settings {
+	return &settings{
 		newDbusBase(m.c, networkManagerSettingsObject),
 	}
 }
@@ -328,6 +364,6 @@ func (m *manager) connect(passphrase, security, keyMgmt string, d *dev, a *ap) e
 	return m.o.Call(networkManagerAddAndActivateConnection, 0, settings, d.o.Path(), a.o.Path()).Err
 }
 
-func (m *manager) reconnect(c *conn, d *dev, a *ap) error {
+func (m *manager) reconnect(c *settingsConn, d *dev, a *ap) error {
 	return m.o.Call(networkManagerActivateConnection, 0, c.o.Path(), d.o.Path(), a.o.Path()).Err
 }
