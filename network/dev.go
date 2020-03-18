@@ -27,6 +27,7 @@ const (
 
 	// Methods
 	deviceWirelessGetAccessPoints = deviceWirelessIface + ".GetAccessPoints"
+	deviceWirelessRequestScan     = deviceWirelessIface + ".RequestScan"
 	deviceDisconnect              = deviceIface + ".Disconnect"
 	deviceAvailableConnections    = deviceIface + ".AvailableConnections"
 
@@ -178,6 +179,10 @@ func (d *dev) registerStateChanged(ch chan ConnectionState) error {
 	}()
 
 	return nil
+}
+
+func (d *dev) requestScan() error {
+	return d.o.Call(deviceWirelessRequestScan, 0, map[string]interface{}{}).Err
 }
 
 func connectedSignal(s *dbus.Signal) bool {

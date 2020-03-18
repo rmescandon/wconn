@@ -36,6 +36,7 @@ type Manager interface {
 	Connect(ssid, passphrase, security, keyMgmt string) (<-chan ConnectionState, error)
 	Disconnect() (<-chan ConnectionState, error)
 	PruneConnections() error
+	RequestScan() error
 }
 
 type manager struct {
@@ -221,6 +222,18 @@ func (m *manager) PruneConnections() error {
 		}
 	}
 	return nil
+}
+
+func (m *manager) RequestScan() error {
+	ds, err := m.wifiDevices()
+	if err != nil {
+		return err
+	}
+	if ds == nil || len(ds) == 0 {
+		return errors.New("Could not find any WiFi device")
+	}
+
+	return ds[0].requestScan()
 }
 
 func newManager() (*manager, error) {
