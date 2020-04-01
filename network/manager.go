@@ -33,7 +33,8 @@ const (
 type Manager interface {
 	Ssids() ([]string, error)
 	Connected() (bool, error)
-	Connect(ssid, passphrase, security, keyMgmt string) (<-chan ConnectionState, error)
+	Connect(ssid, psk, security, keyMgmt string) (<-chan ConnectionState, error)
+	StartHotspot(ssid, psk, security, keyMgmt, hotspotAddr string, hotspotPref uint32) (<-chan ConnectionState, error)
 	Disconnect() (<-chan ConnectionState, error)
 	PruneConnections() error
 	RequestScan() error
@@ -104,7 +105,11 @@ func (m *manager) Connected() (bool, error) {
 	return false, nil
 }
 
-func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan ConnectionState, error) {
+func (m *manager) Connect(ssid, psk, security, keyMgmt string) (<-chan ConnectionState, error) {
+	return m.StartHotspot(ssid, psk, security, keyMgmt, "", 0)
+}
+
+func (m *manager) StartHotspot(ssid, psk, security, keyMgmt, hotspotAddr string, hotspotPref uint32) (<-chan ConnectionState, error) {
 	if err := m.enable(true); err != nil {
 		return nil, err
 	}
@@ -114,21 +119,9 @@ func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan Co
 		return nil, err
 	}
 
-	// Check old connections
-	var oldConn *conn
-	cs, err := d.conns()
+	oldConn, err := d.findExistingConn(ssid)
 	if err != nil {
 		return nil, err
-	}
-	for _, c := range cs {
-		historicSsid, err := c.ssid()
-		if err != nil {
-			return nil, err
-		}
-		if historicSsid == ssid {
-			oldConn = c
-			break
-		}
 	}
 
 	a, err := d.accessPoint(ssid)
@@ -145,7 +138,7 @@ func (m *manager) Connect(ssid, passphrase, security, keyMgmt string) (<-chan Co
 	if oldConn != nil {
 		err = m.reconnect(oldConn, d, a)
 	} else {
-		err = m.connect(passphrase, security, keyMgmt, d, a)
+		err = m.connect(ssid, psk, security, keyMgmt, hotspotAddr, hotspotPref, d, a)
 	}
 
 	return ch, err
@@ -360,20 +353,44 @@ func (m *manager) getDeviceFromSsid(ssid string) (*dev, error) {
 	return nil, errors.Errorf("Could not find a device for SSID: %v", ssid)
 }
 
-func (m *manager) connect(passphrase, security, keyMgmt string, d *dev, a *ap) error {
-	settings := map[string]map[string]dbus.Variant{
+func (m *manager) connect(ssid, psk, security, keyMgmt, hotspotAddr string, hotspotPref uint32, d *dev, a *ap) error {
+	st := genConnectSettings(ssid, psk, security, keyMgmt, hotspotAddr, hotspotPref)
+	return m.o.Call(managerAddAndActivateConnection, 0, st, d.o.Path(), a.o.Path()).Err
+}
+
+func (m *manager) reconnect(c *conn, d *dev, a *ap) error {
+	return m.o.Call(managerActivateConnection, 0, c.o.Path(), d.o.Path(), a.o.Path()).Err
+}
+
+func genConnectSettings(ssid, psk, security, keyMgmt, hotspotAddr string, hotspotPref uint32) map[string]map[string]dbus.Variant {
+	st := map[string]map[string]dbus.Variant{
 		"801-11-wireless": map[string]dbus.Variant{
 			"security": dbus.MakeVariant(security),
 		},
 		"802-11-wireless-security": map[string]dbus.Variant{
 			"key-mgmt": dbus.MakeVariant(keyMgmt),
-			"psk":      dbus.MakeVariant(passphrase),
+			"psk":      dbus.MakeVariant(psk),
 		},
 	}
 
-	return m.o.Call(managerAddAndActivateConnection, 0, settings, d.o.Path(), a.o.Path()).Err
-}
+	// Is a hotspot ?
+	if len(hotspotAddr) > 0 && hotspotPref != 0 {
+		st["connection"] = map[string]dbus.Variant{
+			"autoconnect": dbus.MakeVariant(false),
+			"mode":        dbus.MakeVariant("ap"),
+		}
+		st["ipv4"] = map[string]dbus.Variant{
+			"address-data": dbus.MakeVariant(
+				map[string]dbus.Variant{
+					"address": dbus.MakeVariant(hotspotAddr),
+					"prefix":  dbus.MakeVariant(hotspotPref),
+				},
+			),
+		}
+		st["ipv6"] = map[string]dbus.Variant{
+			"method": dbus.MakeVariant("ignore"),
+		}
+	}
 
-func (m *manager) reconnect(c *conn, d *dev, a *ap) error {
-	return m.o.Call(managerActivateConnection, 0, c.o.Path(), d.o.Path(), a.o.Path()).Err
+	return st
 }

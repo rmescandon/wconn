@@ -122,6 +122,24 @@ func (d *dev) conns() ([]*conn, error) {
 	return conns, nil
 }
 
+func (d *dev) findExistingConn(ssid string) (*conn, error) {
+	cs, err := d.conns()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, c := range cs {
+		s, err := c.ssid()
+		if err != nil {
+			return nil, err
+		}
+		if s == ssid {
+			return c, nil
+		}
+	}
+	return nil, nil
+}
+
 func (d *dev) is(propertyPath string, comparationFlag uint32) (bool, error) {
 	v, err := d.o.GetProperty(propertyPath)
 	if err != nil {
